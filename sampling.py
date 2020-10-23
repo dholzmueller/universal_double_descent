@@ -179,6 +179,8 @@ class RandomNTKSampler:
         self.dim = sum([lsa * lsb for lsa, lsb in zip(self.layer_sizes[:-1], self.layer_sizes[1:])])
 
     def sample(self, N, n):
+        # sample a N x n x self.dim tensor, where self.dim corresponds to p
+        # and N corresponds to the number of feature maps used in parallel
         weight_factor = 1.0/self.act(torch.randn(10000, dtype=torch.float64, device=self.device)).std().item()
         weight_factors = [1.0] + [weight_factor]*len(self.hidden_sizes)
         # cannot put self.act as activation in the weight layers
@@ -214,6 +216,37 @@ class RandomNTKSampler:
             assert(torch.allclose(result, grad_result))
 
         return result
+
+
+class RFFBiasSampler:
+    def __init__(self, x_sampler, d_out, weight_gain=1.0):
+        self.x_sampler = x_sampler
+        self.dim = d_out
+        self.weight_gain = weight_gain
+
+    def sample(self, N, n):
+        # sample a N x n x self.dim tensor, where self.dim corresponds to p
+        # and N corresponds to the number of feature maps used in parallel
+        x = self.x_sampler.sample(N, n)  # N x n x d
+        W = self.weight_gain * torch.randn(N, self.x_sampler.dim, self.dim, dtype=torch.float64)
+        b = 2 * np.pi * torch.rand(N, 1, self.dim, dtype=torch.float64)
+        return torch.cos(x.bmm(W) + b)
+
+
+class RFFSinCosSampler:
+    def __init__(self, x_sampler, d_out, weight_gain=1.0):
+        self.x_sampler = x_sampler
+        assert d_out % 2 == 0, 'Output dimension must be a multiple of 2 (use sin/cos pairs)'
+        self.dim = d_out
+        self.weight_gain = weight_gain
+
+    def sample(self, N, n):
+        # sample a N x n x self.dim tensor, where self.dim corresponds to p
+        # and N corresponds to the number of feature maps used in parallel
+        x = self.x_sampler.sample(N, n)  # N x n x d
+        W = self.weight_gain * torch.randn(N, self.x_sampler.dim, self.dim//2, dtype=torch.float64)
+        x = x.bmm(W)
+        return torch.cat([torch.sin(x), torch.cos(x)], dim=2)
 
 
 class FixedFeatureMapSampler:

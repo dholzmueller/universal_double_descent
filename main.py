@@ -30,11 +30,15 @@ if __name__ == '__main__':
     # ntk results are also noisy and need more repetitions
     compute_random_ntk_results(layer_sizes=[4, 6, 1], n_rep=100)  # NTK has 30-dimensional feature map (4*6 + 6*1 = 30)
     compute_poly_kernel_results(n_rep=10)
+    compute_rff_results(n_rep=10)
+    compute_rff_results(n_rep=100, weight_gain=1/30)
 
     # plot figures based on saved results
     plot_nn()
     plot_poly_kernel()
     plot_ntk()
+    plot_rff()
+    plot_rff_vs_sphere()
     plot_lower_bound_hypotheses()
     plot_counterexample()
 

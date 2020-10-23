@@ -237,6 +237,21 @@ def compute_poly_kernel_results(max_n=256, deg=4, input_dim=3, c=1.0, n_parallel
                                    compute_p_results=False)
 
 
+def compute_rff_results(n=30, max_n=256, p=30, d=10, n_parallel=1000, n_rep=10, lam=1e-12, weight_gain=1.0):
+    print('Compute RFF bias results')
+    name = f'rffbias-n{n}-p{p}-maxn{max_n}-d{d}-lambda{lam:g}-wg{weight_gain}'
+    sampler = RFFBiasSampler(NormalXSampler(dim=d), d_out=p, weight_gain=weight_gain)
+    compute_dd_results(name, sampler, n_rep, n_parallel, n=n, max_n=max_n, p=p, max_p=sampler.dim, lam=lam,
+                       compute_p_results=False)
+
+    print('Compute RFF sin+cos results')
+    name = f'rffsincos-n{n}-p{p}-maxn{max_n}-d{d}-lambda{lam:g}-wg{weight_gain}'
+    sampler = RFFSinCosSampler(NormalXSampler(dim=d), d_out=p, weight_gain=weight_gain)
+    compute_dd_results(name, sampler, n_rep, n_parallel, n=n, max_n=max_n, p=p, max_p=sampler.dim, lam=lam,
+                       compute_p_results=False)
+
+
+
 def verify_frk(sampler, oversampling_factor=3, n_mc=10000):
     torch.manual_seed(0)
     Z = sampler.sample(n_mc, oversampling_factor*sampler.dim)
@@ -281,9 +296,9 @@ def get_activation_functions():
 
 def dd_lower_bound(n, p):
     if p < n:
-        return p / n
+        return p / (n + 1 - p)
     else:
-        return n/(p + 1 - n)
+        return n / (p + 1 - n)
 
 
 def dd_sphere_curve(n, p):

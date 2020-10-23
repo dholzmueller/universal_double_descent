@@ -242,6 +242,62 @@ def plot_nn():
         plot_dd_curves(f'nn_results_{plot_type}', plot_data_emp, plot_data_func, plot_std=True, plot_type=plot_type)
 
 
+def plot_rff():
+    print('Plotting RFF Results for small weight gain')
+    for plot_type in ['n', 'n_over']:
+        plot_data_emp = [('rffbias-n30-p30-maxn256-d10-lambda1e-12-wg0.03333333333333333', 'RFF (cos with bias)', dict(color='#FF8800')),
+                         ('rffsincos-n30-p30-maxn256-d10-lambda1e-12-wg0.03333333333333333', 'RFF (sin and cos)', dict(color='#00AA00')),
+                         ('sphere-n30-p30-maxn256-lambda1e-12', r'\(\mathcal{U}(\mathbb{S}^{p-1})\)', dict(color='#0000BB'))]
+        plot_data_func = [(dd_lower_bound, r'Lower bound', dict(color='k'))]
+        plot_dd_curves(f'rff_results_{plot_type}', plot_data_emp, plot_data_func, plot_std=True, plot_type=plot_type)
+
+
+def plot_rff_vs_sphere():
+    print('Plotting RFF relative to sphere')
+    plt.figure(figsize=(5.5, 3))
+    plt.grid(True, which='both')
+    plt.ylim(0.7, 1.1)
+    plt.axvline(30, color='#333333', linestyle='--', linewidth=1)
+
+    sphere_results = load_dd_results('sphere-n30-p30-maxn256-lambda1e-12')
+    rffbias_results = load_dd_results('rffbias-n30-p30-maxn256-d10-lambda1e-12-wg1.0')
+    rffsincos_results = load_dd_results('rffsincos-n30-p30-maxn256-d10-lambda1e-12-wg1.0')
+    plot_data = []
+    plot_data.append((np.array([[dd_gaussian_curve(n, p=30)] for n in range(1, 257)]), '#22AA22',
+                      r'$\mathcal{N}(0, \boldsymbol{I}_p)$ (analytic)', dict()))
+    plot_data.append((np.array(sphere_results.results_n), '#0000BB', r'$\mathcal{U}(\mathbb{S}^{p-1})$ (empirical)', dict()))
+    plot_data.append((np.array([[dd_sphere_curve(n, p=30) if n <= 30 else 0.0] for n in range(1, 257)]),
+                      '#00FFFF', r'\(\mathcal{U}(\mathbb{S}^{p-1}), n \leq p\) (analytic)', dict(linestyle='--')))
+    plot_data.append((np.array(rffbias_results.results_n), '#AA0000', 'RFF (cos with bias)', dict()))
+    plot_data.append((np.array(rffsincos_results.results_n), '#FF8800', 'RFF (sin and cos)', dict(linestyle='--')))
+    plot_data.append((np.array([[dd_lower_bound(n, p=30)] for n in range(1, 257)]), 'k', 'Lower bound', dict()))
+
+    plt.xscale('log')
+
+    reference_arr = np.mean(np.array(sphere_results.results_n), axis=1)
+
+    for i, ns in enumerate([np.array(list(range(1, 28))), np.array(list(range(33, 257)))]):
+        for arr, color, label, kwargs in plot_data:
+            arr_selected = arr[ns-1, :]
+            means = np.mean(arr_selected, axis=1)
+            reference = reference_arr[ns-1]
+            num_obs = arr_selected.shape[1]
+            stds = np.std(arr_selected, axis=1) / (1.0 if num_obs <= 1 else np.sqrt(num_obs - 1))
+            plt.fill_between(ns, (means - stds) / reference, (means + stds) / reference, alpha=0.3,
+                             facecolor=color, edgecolor='none')
+            if i == 0:  # with label
+                plt.plot(ns, means/reference, color=color, label=label, linewidth=1, **kwargs)
+            else:
+                plt.plot(ns, means/reference, color=color, linewidth=1, **kwargs)
+
+    plt.xlabel('Number of points $n$')
+    plt.ylabel('$\mathcal{E}_{\mathrm{noise}}$ relative to \(\mathcal{U}(\mathbb{S}^{p-1})\) (empirical)')
+    plt.legend()
+    utils.ensureDir('plots/')
+    plt.savefig('plots/rff_vs_sphere.pdf', bbox_inches='tight')
+    plt.close()
+
+
 def plot_poly_kernel():
     print('Plotting poly kernel results')
     plot_data_emp = [('poly-deg4-inputdim3-c1-maxn256-lambda1e-12', r'Polynomial kernel', dict(color='#1f77b4'))]
