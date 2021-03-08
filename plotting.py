@@ -66,7 +66,7 @@ def plot_counterexample():
     plt.loglog(ns, values, color='#1f77b4', label='Counterexample', linewidth=1)
     plt.grid(True, which='both')
     plt.xlabel('Number of points $n$')
-    plt.ylabel(r'$\mathcal{E}_{\mathrm{noise}}$')
+    plt.ylabel(r'$\mathcal{E}_{\mathrm{noise}}$ (noise-induced error)')
     plt.legend()
     utils.ensureDir('plots/')
     plt.savefig('plots/dd_counterexample.pdf', bbox_inches='tight')
@@ -211,7 +211,7 @@ def plot_dd_curves(name, plot_data_emp, plot_data_func, plot_std=True, n=30, p=3
         plt.plot(ns, means, label=label, linewidth=1, **kwargs)
 
     plt.xlabel('Number of parameters $p$' if plot_type == 'p' else 'Number of points $n$')
-    plt.ylabel('$\mathcal{E}_{\mathrm{noise}}$')
+    plt.ylabel(r'$\mathcal{E}_{\mathrm{noise}}$ (noise-induced error)')
     if legend_right:
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     else:
